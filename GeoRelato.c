@@ -186,6 +186,7 @@ void menu() {
     int opcao;
     do {
         printf("\n--- GEORELATO ---\n");
+        printf("o ponto de referência é SP (Latitude: -23.5505 e Longitude: -46.6333)\n");
         printf("1. Cadastrar relator\n");
         printf("2. Cadastrar relato\n");
         printf("3. Buscar relatos por tipo\n");
