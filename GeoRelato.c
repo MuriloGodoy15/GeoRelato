@@ -2,13 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include <ctype.h>
 
 #define MAX_RELATORES 100
 #define MAX_RELATOS 1000
 #define PI 3.141592653589793
 #define RAIO_TERRA_KM 6371.0
 #define RAIO_MAXIMO 10.0
+
+// -------------------- STRUCTS --------------------
 
 typedef struct {
     char nome[100];
@@ -28,13 +29,28 @@ typedef struct {
     double longitude;
 } Relato;
 
+// -------------------- VARIÁVEIS GLOBAIS --------------------
+
 Relator relatores[MAX_RELATORES];
 Relato relatos[MAX_RELATOS];
 int total_relat = 0;
 int total_relato = 0;
 
-double centro_latitude = -23.5505;
+// Localização central
+double centro_latitude = -23.5505;  // São Paulo
 double centro_longitude = -46.6333;
+
+// -------------------- PROTÓTIPOS --------------------
+
+double calcular_distancia(double lat1, double lon1, double lat2, double lon2);
+void cadastrar_relator();
+void cadastrar_relato();
+void buscar_por_tipo();
+void buscar_por_periodo();
+void relatos_exemplo();
+void menu();
+
+// -------------------- FUNÇÕES AUXILIARES --------------------
 
 double to_rad(double degree) {
     return degree * (PI / 180.0);
@@ -56,46 +72,70 @@ double calcular_distancia(double lat1, double lon1, double lat2, double lon2) {
     return RAIO_TERRA_KM * c;
 }
 
-int data_para_inteiro(const char *data) {
-    int d, m, a;
-    sscanf(data, "%d/%d/%d", &d, &m, &a);
-    return a * 10000 + m * 100 + d;
+// -------------------- FUNÇÕES PRINCIPAIS --------------------
+
+void cadastrar_relator() {
+    if (total_relat >= MAX_RELATORES) {
+        printf("Limite de relatores atingido.\n");
+        return;
+    }
+
+    Relator r;
+    printf("Nome completo: ");
+    scanf(" %[^\n]", r.nome);
+    printf("Documento: ");
+    scanf(" %[^\n]", r.documento);
+    printf("Email: ");
+    scanf(" %[^\n]", r.email);
+    printf("Telefone: ");
+    scanf(" %[^\n]", r.telefone);
+    printf("Latitude: ");
+    scanf("%lf", &r.latitude);
+    printf("Longitude: ");
+    scanf("%lf", &r.longitude);
+
+    relatores[total_relat++] = r;
+    printf("Relator cadastrado com sucesso.\n");
 }
 
-void to_lower(char *str) {
-    for (; *str; str++) *str = tolower(*str);
-}
-
-void cadastrar_relato_automatically(char *tipo, char *desc, char *data, char *hora, double lat, double lon) {
-    if (total_relato >= MAX_RELATOS) return;
-
-    double distancia = calcular_distancia(centro_latitude, centro_longitude, lat, lon);
-    if (distancia > RAIO_MAXIMO) return;
+void cadastrar_relato() {
+    if (total_relato >= MAX_RELATOS) {
+        printf("Limite de relatos atingido.\n");
+        return;
+    }
 
     Relato r;
-    strcpy(r.tipo, tipo);
-    strcpy(r.descricao, desc);
-    strcpy(r.data, data);
-    strcpy(r.hora, hora);
-    r.latitude = lat;
-    r.longitude = lon;
+    printf("Tipo de catástrofe: ");
+    scanf(" %[^\n]", r.tipo);
+    printf("Descrição: ");
+    scanf(" %[^\n]", r.descricao);
+    printf("Data (DD/MM/AAAA): ");
+    scanf(" %[^\n]", r.data);
+    printf("Hora (HH:MM): ");
+    scanf(" %[^\n]", r.hora);
+    printf("Latitude: ");
+    scanf("%lf", &r.latitude);
+    printf("Longitude: ");
+    scanf("%lf", &r.longitude);
+
+    double distancia = calcular_distancia(centro_latitude, centro_longitude, r.latitude, r.longitude);
+    if (distancia > RAIO_MAXIMO) {
+        printf("Erro: local do relato está fora do raio de 10 km (%.2f km).\n", distancia);
+        return;
+    }
 
     relatos[total_relato++] = r;
+    printf("Relato cadastrado com sucesso (distância: %.2f km).\n", distancia);
 }
 
 void buscar_por_tipo() {
     char tipo[50];
     printf("Digite o tipo de catástrofe: ");
     scanf(" %[^\n]", tipo);
-    to_lower(tipo);
 
     int encontrados = 0;
     for (int i = 0; i < total_relato; i++) {
-        char tipo_relato[50];
-        strcpy(tipo_relato, relatos[i].tipo);
-        to_lower(tipo_relato);
-
-        if (strcmp(tipo_relato, tipo) == 0) {
+        if (strcmp(relatos[i].tipo, tipo) == 0) {
             printf("\n[%d] %s - %s\nDescrição: %s\nCoordenadas: %.4f, %.4f\n",
                    i + 1, relatos[i].data, relatos[i].hora,
                    relatos[i].descricao, relatos[i].latitude, relatos[i].longitude);
@@ -115,13 +155,9 @@ void buscar_por_periodo() {
     printf("Data fim (DD/MM/AAAA): ");
     scanf(" %[^\n]", fim);
 
-    int data_ini = data_para_inteiro(inicio);
-    int data_fim = data_para_inteiro(fim);
-
     int encontrados = 0;
     for (int i = 0; i < total_relato; i++) {
-        int data_relato = data_para_inteiro(relatos[i].data);
-        if (data_relato >= data_ini && data_relato <= data_fim) {
+        if (strcmp(relatos[i].data, inicio) >= 0 && strcmp(relatos[i].data, fim) <= 0) {
             printf("\n[%d] %s - %s\nTipo: %s\nDescrição: %s\nCoordenadas: %.4f, %.4f\n",
                    i + 1, relatos[i].data, relatos[i].hora, relatos[i].tipo,
                    relatos[i].descricao, relatos[i].latitude, relatos[i].longitude);
@@ -134,6 +170,18 @@ void buscar_por_periodo() {
     }
 }
 
+void relatos_exemplo() {
+    Relato r1 = {"Enchente", "Rua completamente alagada", "25/05/2025", "14:00", -23.5510, -46.6340};
+    Relato r2 = {"Deslizamento", "Barranco cedeu próximo à escola", "24/05/2025", "10:30", -23.5520, -46.6350};
+    Relato r3 = {"Incêndio", "Incêndio em residência", "23/05/2025", "08:15", -23.5530, -46.6360};
+
+    relatos[total_relato++] = r1;
+    relatos[total_relato++] = r2;
+    relatos[total_relato++] = r3;
+}
+
+// -------------------- MENU PRINCIPAL --------------------
+
 void menu() {
     int opcao;
     do {
@@ -145,7 +193,7 @@ void menu() {
         printf("0. Sair\n");
         printf("Escolha uma opção: ");
         scanf("%d", &opcao);
-        getchar();
+        getchar(); // Consumir o \n
 
         switch (opcao) {
             case 1: cadastrar_relator(); break;
@@ -159,12 +207,10 @@ void menu() {
     } while (opcao != 0);
 }
 
-int main() {
-    // Relatos automáticos
-    cadastrar_relato_automatically("Inundação", "Rua alagada no centro da cidade.", "20/05/2025", "14:30", -23.5520, -46.6340);
-    cadastrar_relato_automatically("Deslizamento", "Barranco caiu próximo à escola.", "21/05/2025", "08:15", -23.5515, -46.6339);
-    cadastrar_relato_automatically("Incêndio", "Incêndio em depósito de madeira.", "22/05/2025", "17:45", -23.5508, -46.6322);
+// -------------------- MAIN --------------------
 
+int main() {
+    relatos_exemplo();
     menu();
     return 0;
 }
